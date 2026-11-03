@@ -1,0 +1,15 @@
+# Everything not needed at runtime. Verify with `npx vsce ls`.
+.vscode/**
+node_modules/**
+src/**
+scripts/**
+artifacts/**
+esbuild.js
+eslint.config.mjs
+vitest.config.ts
+**/tsconfig*.json
+**/*.ts
+dist/**/*.map
+*.vsix
+.gitignore
+CLAUDE.md

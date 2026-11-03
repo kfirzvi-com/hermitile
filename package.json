@@ -1,0 +1,423 @@
+{
+  "name": "hermitile",
+  "displayName": "HermiTile",
+  "description": "Layouts for VS Code's panels, switched from the keyboard — like windows on a desktop.",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "preview": true,
+  "publisher": "praktical",
+  "author": "Praktical",
+  "homepage": "https://praktical.dev",
+  "engines": {
+    "vscode": "^1.104.0"
+  },
+  "categories": [
+    "Other",
+    "Keymaps"
+  ],
+  "keywords": [
+    "layout",
+    "panels",
+    "window manager",
+    "workspace",
+    "keyboard"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "HermiTile",
+      "properties": {
+        "hermiTile.presets": {
+          "type": "array",
+          "markdownDescription": "Your layouts, in order: the first is on `Ctrl+Alt+1`, the second on `Ctrl+Alt+2`, and so on up to 9.\n\nEach part is `\"hidden\"`, `\"visible\"`, or `\"maximized\"` (panel and secondary side bar only), or an object that also names the `view` to bring to the front. A part left out is left as it is.\n\n`focus` is where the keyboard lands: `editor`, `sideBar`, `secondarySideBar`, `panel`, or any view id. `commands` run last, in order.",
+          "default": [
+            {
+              "name": "Claude",
+              "icon": "$(sparkle)",
+              "description": "The secondary side bar, and the terminal in it, take the whole window.",
+              "secondarySideBar": "maximized",
+              "focus": "secondarySideBar"
+            },
+            {
+              "name": "Review",
+              "icon": "$(checklist)",
+              "description": "GitHawk's changes on the left, the diff in the editor, nothing else.",
+              "sideBar": {
+                "state": "visible",
+                "view": "gitHawkChanges"
+              },
+              "secondarySideBar": "hidden",
+              "panel": "hidden",
+              "focus": "gitHawkChanges"
+            },
+            {
+              "name": "Commits",
+              "icon": "$(git-commit)",
+              "description": "GitHawk's graph full height, the commit's files on the left.",
+              "sideBar": {
+                "state": "visible",
+                "view": "gitHawkChanges"
+              },
+              "secondarySideBar": "hidden",
+              "panel": {
+                "state": "maximized",
+                "view": "gitHawkView",
+                "position": "bottom",
+                "alignment": "center"
+              },
+              "focus": "gitHawkView"
+            },
+            {
+              "name": "Code",
+              "icon": "$(code)",
+              "description": "Editor first: files on the left, the terminal on the right, no panel.",
+              "sideBar": "visible",
+              "secondarySideBar": "visible",
+              "panel": "hidden",
+              "focus": "editor"
+            }
+          ],
+          "items": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Shown in the status bar and the picker, and used by hermiTile.apply."
+              },
+              "icon": {
+                "type": "string",
+                "markdownDescription": "A codicon, as `$(name)`."
+              },
+              "description": {
+                "type": "string"
+              },
+              "sideBar": {
+                "markdownDescription": "The primary side bar. VS Code cannot maximize it.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "hidden",
+                      "visible"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "state"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "hidden",
+                          "visible"
+                        ]
+                      },
+                      "view": {
+                        "type": "string",
+                        "markdownDescription": "A view to bring to the front, by id — e.g. `gitHawkView`, `gitHawkChanges`, `terminal`, `workbench.explorer.fileView`, `workbench.scm`."
+                      }
+                    }
+                  }
+                ]
+              },
+              "secondarySideBar": {
+                "markdownDescription": "The secondary side bar. Maximized, it takes the whole window — editor included.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "hidden",
+                      "visible",
+                      "maximized"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "state"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "hidden",
+                          "visible",
+                          "maximized"
+                        ]
+                      },
+                      "view": {
+                        "type": "string",
+                        "markdownDescription": "A view to bring to the front, by id — e.g. `gitHawkView`, `gitHawkChanges`, `terminal`, `workbench.explorer.fileView`, `workbench.scm`."
+                      }
+                    }
+                  }
+                ]
+              },
+              "panel": {
+                "markdownDescription": "The panel. Maximized, it takes the editor's place; side bars stay as the preset sets them.",
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "enum": [
+                      "hidden",
+                      "visible",
+                      "maximized"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "required": [
+                      "state"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "state": {
+                        "type": "string",
+                        "enum": [
+                          "hidden",
+                          "visible",
+                          "maximized"
+                        ]
+                      },
+                      "view": {
+                        "type": "string",
+                        "markdownDescription": "A view to bring to the front, by id — e.g. `gitHawkView`, `gitHawkChanges`, `terminal`, `workbench.explorer.fileView`, `workbench.scm`."
+                      },
+                      "position": {
+                        "type": "string",
+                        "enum": [
+                          "bottom",
+                          "top",
+                          "left",
+                          "right"
+                        ]
+                      },
+                      "alignment": {
+                        "type": "string",
+                        "enum": [
+                          "center",
+                          "justify",
+                          "left",
+                          "right"
+                        ],
+                        "markdownDescription": "How far a top or bottom panel stretches. `center` keeps it under the editor, with both side bars full height beside it — and is the only alignment VS Code will maximize a top or bottom panel in."
+                      }
+                    }
+                  }
+                ]
+              },
+              "focus": {
+                "type": "string",
+                "markdownDescription": "`editor`, `sideBar`, `secondarySideBar`, `panel`, or a view id."
+              },
+              "commands": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Command ids to run after the layout is built."
+              }
+            }
+          }
+        },
+        "hermiTile.statusBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show the current layout in the status bar."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "hermiTile.pick",
+        "title": "Apply A Layout…",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.apply",
+        "title": "Apply A Layout By Name",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "title": "Apply The Layout At A Number",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.back",
+        "title": "Back To The Previous Layout",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.next",
+        "title": "Next Layout",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.previous",
+        "title": "Previous Layout",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.maximize",
+        "title": "Maximize The Focused Part (Again To Restore)",
+        "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.state",
+        "title": "Report The Current Layout",
+        "category": "HermiTile"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "hermiTile.applySlot",
+          "when": "false"
+        },
+        {
+          "command": "hermiTile.state",
+          "when": "false"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+1",
+        "args": 1
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+2",
+        "args": 2
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+3",
+        "args": 3
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+4",
+        "args": 4
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+5",
+        "args": 5
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+6",
+        "args": 6
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+7",
+        "args": 7
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+8",
+        "args": 8
+      },
+      {
+        "command": "hermiTile.applySlot",
+        "key": "ctrl+alt+9",
+        "args": 9
+      },
+      {
+        "command": "hermiTile.pick",
+        "key": "ctrl+alt+0"
+      },
+      {
+        "command": "hermiTile.back",
+        "key": "ctrl+alt+tab"
+      },
+      {
+        "command": "hermiTile.next",
+        "key": "ctrl+alt+]"
+      },
+      {
+        "command": "hermiTile.previous",
+        "key": "ctrl+alt+["
+      },
+      {
+        "command": "hermiTile.maximize",
+        "key": "ctrl+alt+m",
+        "args": "secondarySideBar",
+        "when": "auxiliaryBarFocus"
+      },
+      {
+        "command": "hermiTile.maximize",
+        "key": "ctrl+alt+m",
+        "args": "panel",
+        "when": "panelFocus"
+      },
+      {
+        "command": "hermiTile.maximize",
+        "key": "ctrl+alt+m",
+        "args": "sideBar",
+        "when": "sideBarFocus"
+      },
+      {
+        "command": "hermiTile.maximize",
+        "key": "ctrl+alt+m",
+        "args": "editor",
+        "when": "!auxiliaryBarFocus && !panelFocus && !sideBarFocus"
+      }
+    ],
+    "configurationDefaults": {
+      "terminal.integrated.commandsToSkipShell": [
+        "hermiTile.applySlot",
+        "hermiTile.pick",
+        "hermiTile.back",
+        "hermiTile.next",
+        "hermiTile.previous",
+        "hermiTile.maximize"
+      ]
+    }
+  },
+  "scripts": {
+    "dev": "node esbuild.js --watch",
+    "build": "node esbuild.js --production",
+    "check": "npm run check:types && npm run lint",
+    "check:types": "tsc -p tsconfig.host.json",
+    "lint": "eslint src",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "npm run build && scripts/e2e-docker.sh",
+    "package": "npm run check && npm run test && npm run build && vsce package --no-dependencies",
+    "install:local": "npm run package && code --install-extension hermitile-$npm_package_version.vsix --force",
+    "vscode:prepublish": "npm run build",
+    "e2e:mac": "npm run build && node scripts/e2e.mjs",
+    "e2e:mac:real": "npm run build && HERMITILE_E2E_EXTENSIONS=1 node scripts/e2e.mjs artifacts/e2e-real"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "@types/node": "22.x",
+    "@types/vscode": "^1.104.0",
+    "@typescript-eslint/eslint-plugin": "^8.42.0",
+    "@typescript-eslint/parser": "^8.42.0",
+    "@vscode/vsce": "^3.2.0",
+    "esbuild": "^0.25.9",
+    "eslint": "^9.34.0",
+    "eslint-import-resolver-typescript": "^4.4.5",
+    "eslint-plugin-boundaries": "^5.0.1",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  }
+}

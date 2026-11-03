@@ -1,0 +1,16 @@
+{
+  "name": "hermitile-e2e-helper",
+  "displayName": "HermiTile E2E Helper",
+  "description": "Test-only: puts the workbench into the shape the e2e run needs. Never packaged.",
+  "version": "0.0.0",
+  "publisher": "praktical",
+  "private": true,
+  "engines": { "vscode": "^1.104.0" },
+  "activationEvents": ["onStartupFinished"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "hermiTileE2e.terminalToSecondarySideBar", "title": "HermiTile E2E: Move The Terminal To The Secondary Side Bar" }
+    ]
+  }
+}

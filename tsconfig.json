@@ -1,0 +1,10 @@
+{
+  // Editor-only: spans the tests too, for IntelliSense. `npm run check:types`
+  // uses tsconfig.host.json, which is what the extension is built from.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts", "scripts/**/*.ts"]
+}
