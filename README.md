@@ -1,10 +1,24 @@
-# HermiTile
+<p align="center">
+  <img src="images/wordmark.png" width="560" alt="HermiTile">
+</p>
 
-Layouts for VS Code's panels, switched from the keyboard — like windows on a desktop.
+<p align="center">
+  Layouts for VS Code's panels, switched from the keyboard — like windows on a desktop.
+</p>
 
 A hermit crab moves into whichever shell suits it. HermiTile moves your workbench into whichever
 layout suits what you are doing: talking to an agent in the terminal, reviewing a change,
-walking through history.
+walking through history. One key, and the side bars, panel and editor snap into place.
+
+![Commits: the git graph full height, the commit's files on the left](images/screenshots/commits.png)
+
+## Install
+
+- **VS Code:** search the Extensions view for **HermiTile**, or run
+  `code --install-extension praktical.hermitile`.
+- **Cursor, VSCodium and other Open VSX editors:** search for **HermiTile** there.
+
+Then press `Ctrl+Alt+1` (macOS: `⌃⌥1`).
 
 ## Shortcuts
 
@@ -14,13 +28,16 @@ walking through history.
 | `Ctrl+Alt+0` | Pick a preset |
 | `Ctrl+Alt+Tab` | Back to the previous layout (again: forward) — Alt+Tab for layouts |
 | `Ctrl+Alt+]` / `[` | Next / previous preset |
-| `Ctrl+Alt+M` | Maximize the part the keyboard is in; again to restore (not `⌃⌥↩`: Rectangle has it) |
+| `Ctrl+Alt+M` | Maximize the part the keyboard is in; again to restore |
 
 They work with the keyboard in a terminal too: HermiTile adds its commands to
 `terminal.integrated.commandsToSkipShell`, so the shell never sees them. (If you have set that
 setting yourself, your list replaces the default — add the `hermiTile.*` commands to it.)
 
 Pressing a preset's key again snaps the layout back into shape after you have moved things.
+The status bar shows the current preset; click it to pick another.
+
+![The preset picker](images/screenshots/picker.png)
 
 ## Presets
 
@@ -31,7 +48,30 @@ Pressing a preset's key again snaps the layout back into shape after you have mo
 | 3 | **Commits** | GitHawk's graph full height, the commit's files on the left |
 | 4 | **Code** | Files on the left, terminal on the right, editor in between, no panel |
 
-Make your own in `settings.json`. The order is the shortcut order:
+Review and Commits are built around [GitHawk](https://githawk.dev), a git graph and code review
+extension. Without it they still arrange the side bar and panel, and warn that GitHawk's views
+are missing; point them at other views in your own presets.
+
+<details>
+<summary>See each preset</summary>
+
+**Claude** — keep your agent's terminal in the secondary side bar, and give it the whole window.
+
+![Claude](images/screenshots/claude.png)
+
+**Review**
+
+![Review](images/screenshots/review.png)
+
+**Code**
+
+![Code](images/screenshots/code.png)
+
+</details>
+
+## Make your own
+
+Presets live in `settings.json`. The order is the shortcut order:
 
 ```jsonc
 "hermiTile.presets": [
@@ -54,14 +94,19 @@ Make your own in `settings.json`. The order is the shortcut order:
 | `focus` | `editor`, `sideBar`, `secondarySideBar`, `panel`, or any view id |
 | `commands` | command ids run last, in order |
 
-A part left out is left alone. A `view` is any view id — `gitHawkView`, `gitHawkChanges`,
-`terminal`, `workbench.explorer.fileView`, `workbench.scm`.
+A part left out is left alone. A `view` is any view id — `workbench.explorer.fileView`,
+`workbench.scm`, `terminal`, `gitHawkView`, `gitHawkChanges`.
 
-Bind a preset by name, rather than by place:
+Bind a preset by name, rather than by place, in `keybindings.json`:
 
 ```jsonc
 { "key": "ctrl+alt+c", "command": "hermiTile.apply", "args": "Claude" }
 ```
+
+| Setting | Default | |
+|---|---|---|
+| `hermiTile.presets` | Claude, Review, Commits, Code | The presets, in shortcut order |
+| `hermiTile.statusBar` | `true` | Show the current preset in the status bar |
 
 ## What VS Code does not let an extension do
 
@@ -80,6 +125,9 @@ Bind a preset by name, rather than by place:
 npm install
 npm run check && npm test   # types, lint, unit tests
 npm run e2e                 # a real VS Code in Docker: presses the keys, measures the window
-npm run e2e:mac             # the same in your installed VS Code, in a window (takes the keyboard)
 npm run install:local       # package and install into your VS Code
 ```
+
+## License
+
+[MIT](LICENSE) © Praktical

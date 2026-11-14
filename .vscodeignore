@@ -5,6 +5,8 @@ src/**
 scripts/**
 artifacts/**
 assets/**
+images/screenshots/**
+images/wordmark.png
 esbuild.js
 eslint.config.mjs
 vitest.config.ts

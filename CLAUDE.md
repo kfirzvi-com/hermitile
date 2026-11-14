@@ -1,8 +1,8 @@
 # HermiTile — Claude Code Instructions
 
 Layouts for VS Code's panels, switched from the keyboard — like windows on a desktop.
-The name: a hermit crab moves between shells; here, between tiled layouts. Local only for now
-(not published, no remote).
+The name: a hermit crab moves between shells; here, between tiled layouts. Published as
+`praktical.hermitile` (VS Code Marketplace + Open VSX); the repo stays private until release.
 
 ## Architecture — three DDD tiers (GitHawk's, minus what this does not need)
 
