@@ -1,5 +1,6 @@
 # Everything not needed at runtime. Verify with `npx vsce ls`.
 .vscode/**
+.github/**
 node_modules/**
 src/**
 scripts/**

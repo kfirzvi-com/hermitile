@@ -474,6 +474,7 @@
     "eslint": "^9.34.0",
     "eslint-import-resolver-typescript": "^4.4.5",
     "eslint-plugin-boundaries": "^5.0.1",
+    "ovsx": "^1.4.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }

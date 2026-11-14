@@ -1,0 +1,81 @@
+name: CI
+
+# Runs on every push and pull request, and is called by Release so that nothing
+# reaches a store without having passed both test tiers on the exact commit
+# being published. A store version cannot be withdrawn once it is up — only
+# superseded.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Types, lint, unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm test
+
+      # Packaging is part of being correct: .vscodeignore drifts, and a package
+      # that fails to assemble should fail here rather than at publish.
+      - name: Package
+        run: npx vsce package --no-dependencies --out hermitile.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix-${{ github.sha }}
+          path: hermitile.vsix
+          retention-days: 14
+
+  e2e:
+    name: E2E (real VS Code)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # VS Code is Electron, so it needs Chromium's shared libraries; Playwright
+      # keeps that list per distro. xvfb and libsecret are not on it.
+      - name: Electron runtime dependencies
+        run: |
+          npx playwright install-deps chromium
+          sudo apt-get install -y xvfb libsecret-1-0 libxkbfile1
+
+      - name: VS Code
+        run: |
+          curl -fsSL https://update.code.visualstudio.com/latest/linux-x64/stable -o /tmp/code.tgz
+          mkdir -p /opt/vscode && tar -xzf /tmp/code.tgz -C /opt/vscode --strip-components=1
+
+      # Review and Commits are built around GitHawk's views.
+      - name: GitHawk
+        run: echo "HERMITILE_E2E_GITHAWK=$(scripts/fetch-githawk.sh /tmp/githawk)" >> "$GITHUB_ENV"
+
+      - name: Run
+        env:
+          HERMITILE_E2E_CODE: /opt/vscode/code
+        run: xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/e2e.mjs artifacts/e2e
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-${{ github.run_id }}
+          path: artifacts/e2e
+          if-no-files-found: ignore
+          retention-days: 14
