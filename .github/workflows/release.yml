@@ -1,14 +1,20 @@
 name: Release
 
-# A tag vX.Y.Z publishes that version to both stores. The tag must match
-# package.json, and CHANGELOG.md must have a section for it: that section is
-# the GitHub Release's notes.
+# Two channels, one number line, as GitHawk's:
+#
+#   X.Y.0            stable       tag vX.Y.0
+#   X.Y.<commits>    pre-release  push to main
+#
+# Patch 0 is reserved for stable, every other patch is a pre-release build, so
+# no version is ever published on both channels — which the Marketplace forbids,
+# and which it enforces by refusing to reissue a version at all.
 on:
   push:
+    branches: [main]
     tags: ['v[0-9]+.[0-9]+.[0-9]+']
 
-# Serialised across the whole repository: two publishes racing would leave one
-# version permanently unusable, since a store never reissues a version.
+# Serialised across the whole repository, not per ref: two publishes racing for
+# the next version number would leave one of them permanently unusable.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -18,37 +24,79 @@ permissions:
 
 jobs:
   plan:
-    name: Check the version
+    name: Decide what to publish
     runs-on: ubuntu-24.04
     outputs:
+      channel: ${{ steps.plan.outputs.channel }}
       version: ${{ steps.plan.outputs.version }}
     steps:
+      # Full history: the pre-release build number is the commit count, and the
+      # release-commit check needs tags.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - id: plan
         run: |
           set -euo pipefail
-          version="${GITHUB_REF#refs/tags/v}"
-          manifest="$(node -p "require('./package.json').version")"
-          if [[ "$version" != "$manifest" ]]; then
-            echo "::error::tag v$version disagrees with package.json $manifest"
-            exit 1
+
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            version="${GITHUB_REF#refs/tags/v}"
+            manifest="$(node -p "require('./package.json').version")"
+
+            if [[ "$version" != "$manifest" ]]; then
+              echo "::error::tag v$version disagrees with package.json $manifest"
+              exit 1
+            fi
+            if [[ "${version##*.}" != "0" ]]; then
+              echo "::error::a stable release must end in .0 (got $version); other patch numbers belong to pre-release builds"
+              exit 1
+            fi
+            # Its section is the GitHub Release's notes.
+            node scripts/changelog-section.mjs "$version" > /dev/null
+
+            channel=stable
+
+          elif [[ -n "$(git tag --points-at HEAD -l 'v*')" ]]; then
+            # The release commit arriving on main. Its tag publishes the stable
+            # version; also publishing a pre-release from this commit would take
+            # a higher number and lock the stable one out for good. Push the
+            # commit and its tag together with --atomic so this check cannot see
+            # the commit before the tag exists.
+            channel=none
+            version=
+
+          else
+            # package.json holds the most recent stable version; its major.minor
+            # is the line the current pre-releases belong to.
+            line="$(node -p "require('./package.json').version.split('.').slice(0, 2).join('.')")"
+            channel=pre-release
+            version="$line.$(git rev-list --count HEAD)"
           fi
-          node scripts/changelog-section.mjs "$version" > /dev/null
+
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "Publishing $channel${version:+ $version}"
 
   ci:
     name: CI
     needs: plan
+    if: needs.plan.outputs.channel != 'none'
     uses: ./.github/workflows/ci.yml
 
   # One package, built once, published to each store by a job of its own: an
   # outage at one store does not hold the version back from the other, and
-  # re-running the failed job retries only that store. Both install the same
-  # bytes.
+  # re-running the failed job retries only that store — re-running a combined
+  # one would try to reissue a version the other store already has, and be
+  # refused. Both audiences install the same bytes.
   package:
-    name: Package ${{ needs.plan.outputs.version }}
+    name: Package ${{ needs.plan.outputs.channel }} ${{ needs.plan.outputs.version }}
     needs: [plan, ci]
+    if: needs.plan.outputs.channel != 'none'
     runs-on: ubuntu-24.04
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      CHANNEL: ${{ needs.plan.outputs.channel }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,7 +104,19 @@ jobs:
           node-version: '24'
           cache: npm
       - run: npm ci
-      - run: npx vsce package --no-dependencies --out "hermitile-${{ needs.plan.outputs.version }}.vsix"
+
+      # Pre-release build numbers are never committed back to main. The commit
+      # is the identity of a build; the number only has to sort correctly.
+      - name: Stamp the version
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Package
+        run: |
+          set -euo pipefail
+          flag=()
+          if [[ "$CHANNEL" == pre-release ]]; then flag=(--pre-release); fi
+          npx vsce package "${flag[@]}" --no-dependencies --out "hermitile-$VERSION.vsix"
+
       - uses: actions/upload-artifact@v4
         with:
           name: hermitile-${{ needs.plan.outputs.version }}
@@ -69,6 +129,8 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       VSCE_PAT: ${{ secrets.VSCE_PAT }}
+      VERSION: ${{ needs.plan.outputs.version }}
+      CHANNEL: ${{ needs.plan.outputs.channel }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -79,15 +141,24 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: hermitile-${{ needs.plan.outputs.version }}
-      - run: npx vsce publish --packagePath "hermitile-${{ needs.plan.outputs.version }}.vsix"
+      - name: Publish
+        run: |
+          set -euo pipefail
+          flag=()
+          if [[ "$CHANNEL" == pre-release ]]; then flag=(--pre-release); fi
+          npx vsce publish "${flag[@]}" --packagePath "hermitile-$VERSION.vsix"
 
   # Where the forks install from: Cursor, VSCodium, Windsurf.
+  #
+  # No --pre-release here. ovsx ignores it for an already-packaged vsix and says
+  # so; the channel is read from the flag vsce stamped into the manifest.
   openvsx:
     name: Open VSX ${{ needs.plan.outputs.version }}
     needs: [plan, package]
     runs-on: ubuntu-24.04
     env:
       OVSX_PAT: ${{ secrets.OVSX_PAT }}
+      VERSION: ${{ needs.plan.outputs.version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -98,13 +169,16 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: hermitile-${{ needs.plan.outputs.version }}
-      - run: npx ovsx publish --packagePath "hermitile-${{ needs.plan.outputs.version }}.vsix" --pat "$OVSX_PAT"
+      - name: Publish
+        run: npx ovsx publish --packagePath "hermitile-$VERSION.vsix" --pat "$OVSX_PAT"
 
   # Gated on both stores: a GitHub Release announces that a version is out, and
-  # announcing one nobody can install from their editor would be a lie.
+  # announcing one nobody can install from their editor would be a lie. Stable
+  # only.
   release:
     name: GitHub Release ${{ needs.plan.outputs.version }}
     needs: [plan, marketplace, openvsx]
+    if: needs.plan.outputs.channel == 'stable'
     runs-on: ubuntu-24.04
     env:
       GH_TOKEN: ${{ github.token }}
@@ -114,7 +188,10 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: hermitile-${{ needs.plan.outputs.version }}
-      - run: |
+      - name: Create it
+        run: |
           set -euo pipefail
           node scripts/changelog-section.mjs "$VERSION" > /tmp/notes.md
-          gh release create "v$VERSION" "hermitile-$VERSION.vsix" --title "HermiTile $VERSION" --notes-file /tmp/notes.md
+          gh release create "v$VERSION" "hermitile-$VERSION.vsix" \
+            --title "HermiTile $VERSION" \
+            --notes-file /tmp/notes.md

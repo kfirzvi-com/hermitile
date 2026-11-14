@@ -1,12 +1,10 @@
 name: CI
 
-# Runs on every push and pull request, and is called by Release so that nothing
-# reaches a store without having passed both test tiers on the exact commit
-# being published. A store version cannot be withdrawn once it is up — only
-# superseded.
+# Runs on every pull request, and is called by Release — on every push to main
+# and every tag — so that nothing reaches a store without having passed both
+# test tiers on the exact commit being published. A store version cannot be
+# withdrawn once it is up, only superseded.
 on:
-  push:
-    branches: [main]
   pull_request:
   workflow_call:
 
