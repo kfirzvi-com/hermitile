@@ -39,6 +39,14 @@ The status bar shows the current preset; click it to pick another.
 
 ![The preset picker](images/screenshots/picker.png)
 
+## The Layouts panel
+
+HermiTile's icon in the activity bar opens every preset with its key, the current one marked.
+Click one to apply it. The buttons on top go back to the previous layout and open your presets
+in `settings.json`.
+
+![The Layouts panel](images/screenshots/activity-bar.png)
+
 ## Presets
 
 | # | Preset | Layout |

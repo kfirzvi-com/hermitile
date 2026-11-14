@@ -216,7 +216,7 @@ const shown = (l) =>
 await palette('Notifications: Toggle Do Not Disturb Mode');
 await palette('Notifications: Clear All Notifications');
 
-// --- The terminal goes where Kfir keeps it: the secondary side bar.
+// --- The terminal goes where an agent's usually lives: the secondary side bar.
 await palette('HermiTile E2E: Move The Terminal To The Secondary Side Bar');
 await page.waitForTimeout(2000);
 let l = await layout();
@@ -303,6 +303,20 @@ const picks = await page.locator('.quick-input-list .monaco-list-row').allInnerT
 await shot('6-picker');
 check('picker: four presets with their keys', picks.length === 4 && picks.every((text) => /⌃⌥\d|Ctrl\+Alt\+\d/.test(text)), picks);
 await page.keyboard.press('Escape');
+await settle();
+
+// --- The activity bar's list: every preset, the current one marked, a click applies.
+await palette('View: Show HermiTile');
+const rows = page.locator('[id="workbench.view.extension.hermiTile"] .monaco-list-row');
+await rows.first().waitFor({ timeout: 10_000 }).catch(() => undefined);
+const listed = await rows.allInnerTexts();
+await shot('7-activity-bar');
+check('activity bar: four presets with their keys', listed.length === 4 && listed.every((text) => /⌃⌥\d|Ctrl\+Alt\+\d/.test(text)), listed);
+check('activity bar: the current preset is marked', listed.some((text) => text.includes('Commits') && text.includes('current')), listed);
+await rows.filter({ hasText: 'Code' }).click();
+await settle();
+l = await layout();
+check('activity bar: a click applies the preset', l.status?.includes('Code'), l.status);
 
 await app.close();
 

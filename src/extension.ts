@@ -15,11 +15,13 @@ import {
 } from './presentation/host/ConfigurationPresetSource';
 import { MementoHistoryStore } from './presentation/host/MementoHistoryStore';
 import { PresetPicker } from './presentation/host/PresetPicker';
+import { PRESETS_VIEW, PresetTreeProvider } from './presentation/host/PresetTreeProvider';
 import { ResultReporter } from './presentation/host/ResultReporter';
 import { STATUS_BAR_SETTING, StatusBarIndicator } from './presentation/host/StatusBarIndicator';
 import { VsCodeCommandRunner } from './presentation/host/VsCodeCommandRunner';
 
 const PICK_COMMAND = 'hermiTile.pick';
+const APPLY_COMMAND = 'hermiTile.apply';
 
 export function activate(context: vscode.ExtensionContext): void {
     const output = vscode.window.createOutputChannel('HermiTile', { log: true });
@@ -35,18 +37,21 @@ export function activate(context: vscode.ExtensionContext): void {
     const picker = new PresetPicker();
     const reporter = new ResultReporter(output);
     const statusBar = new StatusBarIndicator(PICK_COMMAND);
+    const tree = new PresetTreeProvider(APPLY_COMMAND);
 
-    const refreshStatusBar = () => {
+    const refreshViews = () => {
         const enabled = vscode.workspace.getConfiguration(CONFIG_SECTION).get<boolean>(STATUS_BAR_SETTING, true);
-        const current = history.current === undefined ? undefined : source.catalog().find(history.current);
+        const catalog = source.catalog();
+        const current = history.current === undefined ? undefined : catalog.find(history.current);
         statusBar.show(current, enabled);
+        tree.show(catalog, current?.name);
     };
 
     const queue = new SerialQueue();
     const run = async (task: () => Promise<ApplyResult>): Promise<ApplyResult> => {
         const done = await queue.run(task);
         reporter.report(done);
-        refreshStatusBar();
+        refreshViews();
         return done;
     };
 
@@ -58,13 +63,15 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         output,
         statusBar,
+        tree,
+        vscode.window.registerTreeDataProvider(PRESETS_VIEW, tree),
 
         /**
          * By name, for keybindings of your own:
          * `{ "key": "…", "command": "hermiTile.apply", "args": "Claude" }`.
          * Without a name it asks.
          */
-        vscode.commands.registerCommand('hermiTile.apply', (arg?: unknown) => {
+        vscode.commands.registerCommand(APPLY_COMMAND, (arg?: unknown) => {
             const name = typeof arg === 'string' ? arg : presetArg(arg);
             if (name === undefined) {
                 return pick();
@@ -91,6 +98,12 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.commands.registerCommand('hermiTile.back', () => run(() => back.execute())),
         vscode.commands.registerCommand('hermiTile.next', () => run(() => cycle.execute(1))),
         vscode.commands.registerCommand('hermiTile.previous', () => run(() => cycle.execute(-1))),
+        /** Opens settings.json at the presets, adding them there if they are not yet. */
+        vscode.commands.registerCommand('hermiTile.editPresets', () =>
+            vscode.commands.executeCommand('workbench.action.openSettingsJson', {
+                revealSetting: { key: `${CONFIG_SECTION}.presets`, edit: true },
+            })
+        ),
 
         /**
          * The keybinding passes the part the keyboard is in, from VS Code's own
@@ -110,12 +123,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration(CONFIG_SECTION)) {
-                refreshStatusBar();
+                refreshViews();
             }
         })
     );
 
-    refreshStatusBar();
+    refreshViews();
 }
 
 export function deactivate(): void {}

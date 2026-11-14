@@ -86,7 +86,10 @@
               "name": "Code",
               "icon": "$(code)",
               "description": "Editor first: files on the left, the terminal on the right, no panel.",
-              "sideBar": "visible",
+              "sideBar": {
+                "state": "visible",
+                "view": "workbench.explorer.fileView"
+              },
               "secondarySideBar": "visible",
               "panel": "hidden",
               "focus": "editor"
@@ -250,11 +253,41 @@
         }
       }
     },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "hermiTile",
+          "title": "HermiTile",
+          "icon": "images/activitybar.svg"
+        }
+      ]
+    },
+    "views": {
+      "hermiTile": [
+        {
+          "id": "hermiTile.presets",
+          "name": "Layouts",
+          "icon": "images/activitybar.svg"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "hermiTile.presets",
+        "contents": "No presets yet.\n[Edit Presets](command:hermiTile.editPresets)"
+      }
+    ],
     "commands": [
       {
         "command": "hermiTile.pick",
         "title": "Apply A Layout…",
         "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.editPresets",
+        "title": "Edit Presets",
+        "category": "HermiTile",
+        "icon": "$(edit)"
       },
       {
         "command": "hermiTile.apply",
@@ -269,7 +302,8 @@
       {
         "command": "hermiTile.back",
         "title": "Back To The Previous Layout",
-        "category": "HermiTile"
+        "category": "HermiTile",
+        "icon": "$(history)"
       },
       {
         "command": "hermiTile.next",
@@ -301,6 +335,18 @@
         {
           "command": "hermiTile.state",
           "when": "false"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "hermiTile.back",
+          "when": "view == hermiTile.presets",
+          "group": "navigation@1"
+        },
+        {
+          "command": "hermiTile.editPresets",
+          "when": "view == hermiTile.presets",
+          "group": "navigation@2"
         }
       ]
     },
