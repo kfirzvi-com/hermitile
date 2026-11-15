@@ -5,7 +5,7 @@ All notable changes to HermiTile are documented here, following
 
 ## [Unreleased]
 
-## [0.1.0]
+## [0.1.0] — 2026-11-15
 
 The first release: layouts for VS Code's panels, switched from the keyboard.
 
