@@ -324,6 +324,11 @@
         "command": "hermiTile.state",
         "title": "Report The Current Layout",
         "category": "HermiTile"
+      },
+      {
+        "command": "hermiTile.rate",
+        "title": "Rate HermiTile",
+        "category": "HermiTile"
       }
     ],
     "menus": {
@@ -347,6 +352,11 @@
           "command": "hermiTile.editPresets",
           "when": "view == hermiTile.presets",
           "group": "navigation@2"
+        },
+        {
+          "command": "hermiTile.rate",
+          "when": "view == hermiTile.presets",
+          "group": "z_rate@1"
         }
       ]
     },

@@ -16,6 +16,7 @@ import {
 import { MementoHistoryStore } from './presentation/host/MementoHistoryStore';
 import { PresetPicker } from './presentation/host/PresetPicker';
 import { PRESETS_VIEW, PresetTreeProvider } from './presentation/host/PresetTreeProvider';
+import { RatingNotice } from './presentation/host/RatingNotice';
 import { ResultReporter } from './presentation/host/ResultReporter';
 import { STATUS_BAR_SETTING, StatusBarIndicator } from './presentation/host/StatusBarIndicator';
 import { VsCodeCommandRunner } from './presentation/host/VsCodeCommandRunner';
@@ -38,6 +39,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const reporter = new ResultReporter(output);
     const statusBar = new StatusBarIndicator(PICK_COMMAND);
     const tree = new PresetTreeProvider(APPLY_COMMAND);
+    const rating = new RatingNotice(context.globalState);
 
     const refreshViews = () => {
         const enabled = vscode.workspace.getConfiguration(CONFIG_SECTION).get<boolean>(STATUS_BAR_SETTING, true);
@@ -52,6 +54,12 @@ export function activate(context: vscode.ExtensionContext): void {
         const done = await queue.run(task);
         reporter.report(done);
         refreshViews();
+        if (done.kind === 'applied' && done.failures.length === 0) {
+            // A day counts only when a layout fully applied. Asks for a rating
+            // after several days of use; see ratingPrompt.
+            // Not awaited, so a failure would vanish; log it in the output channel.
+            rating.onUse().catch((error) => output.error('Rating prompt failed', error));
+        }
         return done;
     };
 
@@ -95,6 +103,7 @@ export function activate(context: vscode.ExtensionContext): void {
         }),
 
         vscode.commands.registerCommand(PICK_COMMAND, pick),
+        vscode.commands.registerCommand('hermiTile.rate', () => rating.rate()),
         vscode.commands.registerCommand('hermiTile.back', () => run(() => back.execute())),
         vscode.commands.registerCommand('hermiTile.next', () => run(() => cycle.execute(1))),
         vscode.commands.registerCommand('hermiTile.previous', () => run(() => cycle.execute(-1))),
