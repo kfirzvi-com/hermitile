@@ -136,6 +136,14 @@ npm run e2e                 # a real VS Code in Docker: presses the keys, measur
 npm run install:local       # package and install into your VS Code
 ```
 
+## Made by Praktical
+
+HermiTile is built by **Praktical**, the company behind a small family of developer tools.
+Our other products:
+
+- **[GitGrit](https://gitgrit.dev)**: define your engineering standards as code, and see how every repository measures up.
+- **[GitHawk](https://github.com/kfirzvi-com/githawk)**: a git graph for VS Code that is just a git graph. No AI, no telemetry, no account.
+
 ## License
 
 [MIT](LICENSE) © Praktical
