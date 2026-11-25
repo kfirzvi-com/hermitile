@@ -5,6 +5,15 @@ All notable changes to HermiTile are documented here, following
 
 ## [Unreleased]
 
+### Added
+
+- **A rating request, asked once.** After a layout has been applied on 7
+  different days, HermiTile asks for a rating in the store your editor installs
+  from (the VS Code Marketplace, or Open VSX for Cursor, VSCodium and others),
+  with "Later" (asks once more, at 30 days) and "Don't Ask Again". Also the
+  `HermiTile: Rate HermiTile` command, in the Layouts panel's "…" menu too. The
+  count stays in the editor; nothing is sent.
+
 ## [0.1.0] — 2026-11-15
 
 The first release: layouts for VS Code's panels, switched from the keyboard.

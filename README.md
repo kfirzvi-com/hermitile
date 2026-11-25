@@ -12,6 +12,9 @@ walking through history. One key, and the side bars, panel and editor snap into 
 
 ![Commits: the git graph full height, the commit's files on the left](images/screenshots/commits.png)
 
+[![Rate on the VS Code Marketplace](https://img.shields.io/badge/%E2%98%86%20Rate%20on-VS%20Code%20Marketplace-0078d4)](https://marketplace.visualstudio.com/items?itemName=praktical.hermitile&ssr=false#review-details)
+[![Rate on Open VSX](https://img.shields.io/badge/%E2%98%86%20Rate%20on-Open%20VSX-a60ee5)](https://open-vsx.org/extension/praktical/hermitile/reviews)
+
 ## Install
 
 - **VS Code:** search the Extensions view for **HermiTile**, or run
@@ -126,6 +129,13 @@ Bind a preset by name, rather than by place, in `keybindings.json`:
   `"alignment": "center"` (the defaults do).
 - **Maximize the primary side bar.** `Ctrl+Alt+M` there hides the panel and secondary side
   bar instead.
+
+## Like it?
+
+A rating helps other people find HermiTile: use the **☆ Rate** buttons at the top.
+After a week or so of use, HermiTile asks once (twice at most, if you pick "Later").
+"Don't Ask Again" means it. Nothing is sent anywhere; the count stays in your editor.
+"Rate HermiTile" is also in the Layouts panel's "…" menu.
 
 ## Develop
 
